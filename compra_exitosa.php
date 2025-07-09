@@ -1,16 +1,12 @@
 <?php
 // Archivo: compra_exitosa.php
-// Muestra la confirmación de una compra realizada.
-
+// Muestra la confirmación de una compra (boletos o dulcería).
 require_once 'includes/public_header.php';
 
-// Seguridad: Redirigir si el usuario no ha iniciado sesión.
 if (!isset($_SESSION['user_dni'])) {
     header("Location: login.php");
     exit();
 }
-
-// Validar que se haya proporcionado un ID de compra válido.
 if (!isset($_GET['id_compra']) || !is_numeric($_GET['id_compra'])) {
     echo "<div class='container message error'>Compra no encontrada.</div>";
     require_once 'includes/footer.php';
@@ -18,41 +14,43 @@ if (!isset($_GET['id_compra']) || !is_numeric($_GET['id_compra'])) {
 }
 $id_compra = (int)$_GET['id_compra'];
 
-// --- Consultar los datos de la compra para mostrarlos ---
-$sql = "SELECT c.ID_compra, c.fecha_compra, c.total,
-               p.titulo, f.fecha_hora, s.nombre AS nombre_sede
-        FROM Compra c
-        JOIN Boleto b ON c.ID_compra = b.ID_compra
-        JOIN Funcion f ON b.ID_funcion = f.ID_funcion
-        JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula
-        JOIN Sala sa ON f.ID_sala = sa.ID_sala
-        JOIN Sede s ON sa.ID_sede = s.ID_sede
-        WHERE c.ID_compra = ? AND c.DNI_cliente = ?
-        LIMIT 1"; // Solo necesitamos los datos generales una vez.
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("is", $id_compra, $_SESSION['user_dni']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows == 0) {
-    echo "<div class='container message error'>No tienes permiso para ver esta compra o no existe.</div>";
+// --- Consultar datos generales de la compra ---
+$sql_compra = "SELECT ID_compra, fecha_compra, total FROM Compra WHERE ID_compra = ? AND DNI_cliente = ?";
+$stmt_compra = $conn->prepare($sql_compra);
+$stmt_compra->bind_param("is", $id_compra, $_SESSION['user_dni']);
+$stmt_compra->execute();
+$result_compra = $stmt_compra->get_result();
+if ($result_compra->num_rows == 0) {
+    echo "<div class='container message error'>No tienes permiso para ver esta compra.</div>";
     require_once 'includes/footer.php';
     exit();
 }
-$compra_info = $result->fetch_assoc();
+$compra_info = $result_compra->fetch_assoc();
 
-// Consultar los asientos específicos de esta compra.
-$sql_boletos = "SELECT fila, numero_asiento FROM Boleto WHERE ID_compra = ?";
+// --- Determinar si es compra de boletos o dulcería ---
+$es_compra_boletos = false;
+$boletos = [];
+$sql_boletos = "SELECT p.titulo, f.fecha_hora, s.nombre AS nombre_sede, b.fila, b.numero_asiento FROM Boleto b JOIN Funcion f ON b.ID_funcion = f.ID_funcion JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula JOIN Sala sa ON f.ID_sala = sa.ID_sala JOIN Sede s ON sa.ID_sede = s.ID_sede WHERE b.ID_compra = ?";
 $stmt_boletos = $conn->prepare($sql_boletos);
 $stmt_boletos->bind_param("i", $id_compra);
 $stmt_boletos->execute();
 $result_boletos = $stmt_boletos->get_result();
-$asientos_comprados = [];
-while ($boleto = $result_boletos->fetch_assoc()) {
-    $asientos_comprados[] = $boleto['fila'] . '-' . $boleto['numero_asiento'];
+if ($result_boletos->num_rows > 0) {
+    $es_compra_boletos = true;
+    while($row = $result_boletos->fetch_assoc()) { $boletos[] = $row; }
 }
 
+$es_compra_dulceria = false;
+$dulceria_items = [];
+$sql_dulceria = "SELECT d.nombre, dt.cantidad, dt.precio_unitario FROM Detalle_Compra_Dulceria dt JOIN Dulceria d ON dt.ID_producto = d.ID_producto WHERE dt.ID_compra = ?";
+$stmt_dulceria = $conn->prepare($sql_dulceria);
+$stmt_dulceria->bind_param("i", $id_compra);
+$stmt_dulceria->execute();
+$result_dulceria = $stmt_dulceria->get_result();
+if ($result_dulceria->num_rows > 0) {
+    $es_compra_dulceria = true;
+    while($row = $result_dulceria->fetch_assoc()) { $dulceria_items[] = $row; }
+}
 ?>
 
 <div class="confirmation-container">
@@ -62,11 +60,23 @@ while ($boleto = $result_boletos->fetch_assoc()) {
         <p>Tu transacción ha sido completada exitosamente.</p>
         
         <div class="purchase-details">
-            <h3>Detalles de tu Entrada</h3>
-            <p><strong>Película:</strong> <?php echo htmlspecialchars($compra_info['titulo']); ?></p>
-            <p><strong>Sede:</strong> <?php echo htmlspecialchars($compra_info['nombre_sede']); ?></p>
-            <p><strong>Fecha y Hora:</strong> <?php echo date("d/m/Y h:i A", strtotime($compra_info['fecha_hora'])); ?></p>
-            <p><strong>Asientos:</strong> <?php echo implode(', ', $asientos_comprados); ?></p>
+            <?php if ($es_compra_boletos): ?>
+                <h3>Detalles de tu Entrada</h3>
+                <p><strong>Película:</strong> <?php echo htmlspecialchars($boletos[0]['titulo']); ?></p>
+                <p><strong>Sede:</strong> <?php echo htmlspecialchars($boletos[0]['nombre_sede']); ?></p>
+                <p><strong>Fecha y Hora:</strong> <?php echo date("d/m/Y h:i A", strtotime($boletos[0]['fecha_hora'])); ?></p>
+                <p><strong>Asientos:</strong> <?php echo implode(', ', array_map(fn($b) => $b['fila'].'-'.$b['numero_asiento'], $boletos)); ?></p>
+            <?php endif; ?>
+            
+            <?php if ($es_compra_dulceria): ?>
+                <h3>Detalles de tu Pedido de Dulcería</h3>
+                <ul>
+                    <?php foreach ($dulceria_items as $item): ?>
+                        <li><?php echo $item['cantidad']; ?> x <?php echo htmlspecialchars($item['nombre']); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+            
             <p><strong>Total Pagado:</strong> S/ <?php echo number_format($compra_info['total'], 2); ?></p>
             <p><strong>ID de Compra:</strong> #<?php echo $compra_info['ID_compra']; ?></p>
         </div>
@@ -75,6 +85,4 @@ while ($boleto = $result_boletos->fetch_assoc()) {
     </div>
 </div>
 
-<?php
-require_once 'includes/footer.php';
-?>
+<?php require_once 'includes/footer.php'; ?>

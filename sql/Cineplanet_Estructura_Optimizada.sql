@@ -109,3 +109,17 @@ CREATE TABLE Dulceria (
     precio_unitario DECIMAL(6,2) NOT NULL,
     stock INT DEFAULT 0
 );
+
+-- TABLA: Compra Dulceria
+-- Crear la tabla de detalle para las compras de dulcería
+CREATE TABLE Detalle_Compra_Dulceria (
+  ID_detalle INT AUTO_INCREMENT PRIMARY KEY,
+  ID_compra INT NOT NULL,
+  ID_producto INT NOT NULL,
+  cantidad INT NOT NULL,
+  precio_unitario DECIMAL(6,2) NOT NULL,
+  FOREIGN KEY (ID_compra) REFERENCES Compra(ID_compra) ON DELETE CASCADE,
+  FOREIGN KEY (ID_producto) REFERENCES Dulceria(ID_producto) ON DELETE RESTRICT
+);
+
+-- Prompt: primer lugar sugiero que usemos casillas por alternativas, el tamaño que sea de 10x15 donde las filas es de A a la J y las columnas de 1 al 15

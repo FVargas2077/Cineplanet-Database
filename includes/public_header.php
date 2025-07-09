@@ -1,8 +1,5 @@
 <?php
 // Archivo: includes/public_header.php
-// Cabecera para las páginas públicas del sitio.
-
-// Incluimos la configuración para iniciar la sesión y tener $conn disponible.
 require_once __DIR__ . '/../config/database.php';
 ?>
 <!DOCTYPE html>
@@ -21,14 +18,13 @@ require_once __DIR__ . '/../config/database.php';
         <nav>
             <ul>
                 <li><a href="index.php">Cartelera</a></li>
-                <li><a href="#">Sedes</a></li>
-                <li><a href="#">Dulcería</a></li>
+                <!-- CORRECCIÓN: Enlaces ahora funcionales -->
+                <li><a href="sedes.php">Sedes</a></li>
+                <li><a href="dulceria_public.php">Dulcería</a></li>
                 <?php if (isset($_SESSION['user_dni'])): ?>
-                    <!-- Si el usuario ha iniciado sesión -->
                     <li><a href="perfil_socio.php">Mi Perfil (<?php echo htmlspecialchars($_SESSION['user_nombre']); ?>)</a></li>
                     <li><a href="logout.php" class="logout-btn">Cerrar Sesión</a></li>
                 <?php else: ?>
-                    <!-- Si el usuario no ha iniciado sesión -->
                     <li><a href="login.php" class="login-btn">Iniciar Sesión</a></li>
                 <?php endif; ?>
             </ul>

@@ -374,3 +374,171 @@ footer {
 .funcion-item .hora { font-weight: bold; font-size: 1.2rem; }
 .funcion-item .sala-tipo { background-color: #eee; padding: 5px 10px; border-radius: 15px; }
 .funcion-item:hover .sala-tipo { background-color: #003d73; }
+
+/* === CORRECCIÓN PARA EL MAPA DE ASIENTOS === */
+.seat-map {
+    display: flex; /* Usar flexbox para el contenedor principal */
+    flex-direction: column; /* Apilar las filas verticalmente */
+    align-items: center; /* Centrar las filas */
+}
+.seat-row { 
+    display: flex; /* Clave: Cada fila es un contenedor flex */
+    justify-content: center; /* Centra los asientos dentro de la fila */
+    align-items: center; 
+    margin-bottom: 5px; 
+}
+.seat {
+    width: 30px; height: 30px;
+    margin: 3px;
+    background-color: #a8dff4;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+.seat.selected { background-color: #28a745; color: white; }
+.seat.occupied { background-color: #6c757d; cursor: not-allowed; }
+.seat:not(.occupied):hover { background-color: #17a2b8; }
+.row-label { width: 30px; text-align: center; font-weight: bold; color: #666; margin-left: 10px; }
+
+
+/* === MEJORAS PARA EL FILTRO DE SEDE EN INDEX.PHP === */
+.cartelera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Para que se ajuste en pantallas pequeñas */
+}
+.sede-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sede-filter-form label {
+    font-weight: bold;
+}
+.sede-filter-form select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+/* === ESTILOS PARA PÁGINAS DE INFORMACIÓN (Sedes y Dulcería) === */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+}
+.info-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+.info-card h3 {
+    color: #00529b;
+    margin-top: 0;
+    font-size: 1.3rem;
+    flex-grow: 1; /* Ayuda a alinear botones si los títulos tienen distinta longitud */
+}
+.info-card p {
+    color: #555;
+    margin: 5px 0;
+}
+.info-card .price {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #3c763d;
+    margin-top: 10px;
+}
+.info-card .btn {
+    margin-top: 15px;
+    background-color: #5cb85c;
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+.info-card .btn:hover {
+    background-color: #4cae4c;
+}
+
+/* === ESTILOS PARA COMPRA EN DULCERÍA === */
+.dulceria-compra-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+.product-table-container .data-table input.quantity-input {
+    width: 60px;
+    text-align: center;
+    padding: 5px;
+}
+.product-table-container .data-table .btn-add-cart {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.product-table-container .data-table .btn-add-cart:hover {
+    background-color: #0056b3;
+}
+.cart-container {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+.cart-container h3 {
+    margin-top: 0;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 10px;
+}
+#cart-items ul {
+    list-style: none;
+    padding: 0;
+}
+#cart-items li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+.cart-summary {
+    margin-top: 20px;
+    border-top: 2px solid #dee2e6;
+    padding-top: 15px;
+}
+.cart-summary p {
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+}
+.cart-summary .form-group {
+    margin-bottom: 15px;
+}
+.cart-summary label {
+    display: block;
+    margin-bottom: 5px;
+}
+.cart-summary select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+}
+#btn-checkout {
+    width: 100%;
+    margin-top: 10px;
+}

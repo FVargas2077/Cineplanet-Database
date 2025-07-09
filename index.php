@@ -2,7 +2,7 @@
 // Archivo: index.php (en la raíz del proyecto)
 // Página principal que muestra la cartelera de películas.
 
-// Incluimos la nueva cabecera pública.
+// Incluimos la cabecera pública.
 require_once 'includes/public_header.php';
 ?>
 
@@ -12,8 +12,9 @@ require_once 'includes/public_header.php';
 
     <div class="movie-grid">
         <?php
-        // Consultamos todas las películas de la base de datos.
-        $sql = "SELECT titulo, genero, duracion_minutos, clasificacion, sinopsis FROM Pelicula ORDER BY titulo";
+        // CORRECCIÓN: Se añade 'ID_pelicula' a la consulta SQL.
+        // Esta es la línea que soluciona el problema.
+        $sql = "SELECT ID_pelicula, titulo, genero, duracion_minutos, clasificacion, sinopsis FROM Pelicula ORDER BY titulo";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
@@ -28,7 +29,9 @@ require_once 'includes/public_header.php';
                     <span><strong>Clasificación:</strong> <?php echo htmlspecialchars($pelicula['clasificacion']); ?></span>
                 </div>
                 <p class="sinopsis"><?php echo htmlspecialchars($pelicula['sinopsis']); ?></p>
-                <a href="#" class="btn-comprar">Ver Horarios y Comprar</a>
+                
+                <!-- Este enlace ahora funcionará correctamente porque $pelicula['ID_pelicula'] tiene un valor -->
+                <a href="pelicula_detalle.php?id=<?php echo $pelicula['ID_pelicula']; ?>" class="btn-comprar">Ver Horarios y Comprar</a>
             </div>
         <?php
             } // Fin del while
@@ -40,6 +43,6 @@ require_once 'includes/public_header.php';
 </div>
 
 <?php
-// Incluimos el pie de página público (podemos usar el mismo que el de admin).
+// Incluimos el pie de página.
 require_once 'includes/footer.php';
 ?>
