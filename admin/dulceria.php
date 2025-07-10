@@ -1,23 +1,16 @@
 <?php
-// Archivo: admin/dulceria.php
 // Página para gestionar (Añadir/Eliminar) productos de dulcería.
 
 require_once '../includes/header.php';
-// check_admin(); // Comentado para pruebas
 
-// --- LÓGICA PARA PROCESAR EL FORMULARIO ---
-
-// 1. Lógica para AÑADIR un producto
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_producto'])) {
     $nombre = $conn->real_escape_string($_POST['nombre']);
     $categoria = $conn->real_escape_string($_POST['categoria']);
-    // Usamos floatval para precios y intval para stock.
     $precio = floatval($_POST['precio']);
     $stock = intval($_POST['stock']);
 
     $sql = "INSERT INTO Dulceria (nombre, categoria, precio_unitario, stock) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    // "ssdi" significa (string, string, double, integer)
     $stmt->bind_param("ssdi", $nombre, $categoria, $precio, $stock);
 
     if ($stmt->execute()) {
@@ -28,7 +21,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_producto'])) {
     $stmt->close();
 }
 
-// 2. Lógica para ELIMINAR un producto
 if (isset($_GET['delete_id'])) {
     $id_a_eliminar = (int)$_GET['delete_id'];
 
@@ -46,7 +38,6 @@ if (isset($_GET['delete_id'])) {
 
 ?>
 
-<!-- Sección 1: Formulario para Añadir Nuevo Producto -->
 <div class="form-container">
     <h2>Añadir Nuevo Producto de Dulcería</h2>
     <form action="dulceria.php" method="POST">
@@ -71,7 +62,6 @@ if (isset($_GET['delete_id'])) {
     </form>
 </div>
 
-<!-- Sección 2: Tabla de Productos Existentes -->
 <div>
     <h2>Productos Actuales en Dulcería</h2>
     <table class="data-table">

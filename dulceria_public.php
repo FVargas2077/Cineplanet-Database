@@ -1,17 +1,15 @@
-<?php // Archivo: dulceria_public.php - Página de Dulcería
+<?php
 require_once 'includes/public_header.php';
 ?>
 <div class="container">
     <div class="cartelera-header">
         <h2>Nuestra Dulcería</h2>
-        <!-- Botón principal para ir a la página de compra -->
         <a href="dulceria_compra.php" class="btn">Comprar Productos</a>
     </div>
     <p>Conoce los productos que tenemos para ti.</p>
     
     <div class="info-grid">
         <?php
-        // Consultar todos los productos de la dulcería
         $sql = "SELECT nombre, categoria, precio_unitario FROM Dulceria ORDER BY categoria, nombre";
         $result = $conn->query($sql);
 

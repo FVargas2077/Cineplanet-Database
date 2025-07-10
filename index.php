@@ -12,13 +12,10 @@ require_once 'includes/public_header.php';
 
     <div class="movie-grid">
         <?php
-        // CORRECCIÓN: Se añade 'ID_pelicula' a la consulta SQL.
-        // Esta es la línea que soluciona el problema.
         $sql = "SELECT ID_pelicula, titulo, genero, duracion_minutos, clasificacion, sinopsis FROM Pelicula ORDER BY titulo";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
-            // Iteramos sobre cada película y la mostramos en una "tarjeta".
             while($pelicula = $result->fetch_assoc()) {
         ?>
             <div class="movie-card">
@@ -30,11 +27,10 @@ require_once 'includes/public_header.php';
                 </div>
                 <p class="sinopsis"><?php echo htmlspecialchars($pelicula['sinopsis']); ?></p>
                 
-                <!-- Este enlace ahora funcionará correctamente porque $pelicula['ID_pelicula'] tiene un valor -->
                 <a href="pelicula_detalle.php?id=<?php echo $pelicula['ID_pelicula']; ?>" class="btn-comprar">Ver Horarios y Comprar</a>
             </div>
         <?php
-            } // Fin del while
+            }
         } else {
             echo "<p>No hay películas en cartelera en este momento.</p>";
         }
@@ -43,6 +39,5 @@ require_once 'includes/public_header.php';
 </div>
 
 <?php
-// Incluimos el pie de página.
 require_once 'includes/footer.php';
 ?>

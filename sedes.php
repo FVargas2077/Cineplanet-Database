@@ -7,12 +7,10 @@ require_once 'includes/public_header.php';
     
     <div class="info-grid">
         <?php
-        // Consultar todas las sedes desde la base de datos
         $sql = "SELECT nombre, ciudad FROM Sede ORDER BY ciudad, nombre";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
-            // Iterar sobre cada sede y mostrarla en una tarjeta
             while($sede = $result->fetch_assoc()) {
         ?>
             <div class="info-card">

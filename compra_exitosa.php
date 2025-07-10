@@ -1,5 +1,4 @@
 <?php
-// Archivo: compra_exitosa.php
 // Muestra la confirmación de una compra (boletos o dulcería).
 require_once 'includes/public_header.php';
 
@@ -13,8 +12,6 @@ if (!isset($_GET['id_compra']) || !is_numeric($_GET['id_compra'])) {
     exit();
 }
 $id_compra = (int)$_GET['id_compra'];
-
-// --- Consultar datos generales de la compra ---
 $sql_compra = "SELECT ID_compra, fecha_compra, total FROM Compra WHERE ID_compra = ? AND DNI_cliente = ?";
 $stmt_compra = $conn->prepare($sql_compra);
 $stmt_compra->bind_param("is", $id_compra, $_SESSION['user_dni']);
@@ -26,8 +23,6 @@ if ($result_compra->num_rows == 0) {
     exit();
 }
 $compra_info = $result_compra->fetch_assoc();
-
-// --- Determinar si es compra de boletos o dulcería ---
 $es_compra_boletos = false;
 $boletos = [];
 $sql_boletos = "SELECT p.titulo, f.fecha_hora, s.nombre AS nombre_sede, b.fila, b.numero_asiento FROM Boleto b JOIN Funcion f ON b.ID_funcion = f.ID_funcion JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula JOIN Sala sa ON f.ID_sala = sa.ID_sala JOIN Sede s ON sa.ID_sede = s.ID_sede WHERE b.ID_compra = ?";

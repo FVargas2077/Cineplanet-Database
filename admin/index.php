@@ -1,14 +1,8 @@
 <?php
-// Archivo: admin/index.php
 // Página principal del panel de administración.
 
-// Incluimos el header que ya contiene la conexión a la BD y la lógica de sesión.
 require_once '../includes/header.php';
 
-// Verificamos si el usuario es administrador.
-// Si no lo es, la función check_admin() lo redirigirá al login.
-// Por ahora, comentaremos esta línea para poder acceder sin un login funcional.
-// check_admin(); 
 ?>
 
 <div class="container">

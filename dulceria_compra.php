@@ -1,10 +1,7 @@
 <?php
-// Archivo: dulceria_compra.php
 // Página para seleccionar productos de dulcería y procesar la compra.
 
 require_once 'includes/public_header.php';
-
-// Seguridad: Redirigir si el usuario no ha iniciado sesión.
 if (!isset($_SESSION['user_dni'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
@@ -13,8 +10,6 @@ if (!isset($_SESSION['user_dni'])) {
 
 $dni_cliente = $_SESSION['user_dni'];
 $error_message = '';
-
-// --- PROCESAMIENTO DE LA COMPRA ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['cart_data'])) {
     $cart_data = json_decode($_POST['cart_data'], true);
     $metodo_pago = $_POST['metodo_pago'];
@@ -24,7 +19,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['cart_data'])) {
     } else {
         $conn->begin_transaction();
         try {
-            // Calcular el total
             $total_compra = 0;
             foreach ($cart_data as $item) {
                 $total_compra += $item['price'] * $item['quantity'];

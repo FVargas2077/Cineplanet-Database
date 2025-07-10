@@ -1,8 +1,7 @@
 <?php
-// Archivo: comprar_boleto.php (Actualizado con selección de pago)
-require_once 'includes/public_header.php';
+// Versión mejorada con mapa de asientos 10x15 y checkboxes.
 
-// --- 1. SEGURIDAD Y VALIDACIÓN INICIAL ---
+require_once 'includes/public_header.php';
 if (!isset($_SESSION['user_dni'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
@@ -15,12 +14,9 @@ if (!isset($_GET['id_funcion']) || !is_numeric($_GET['id_funcion'])) {
 }
 $id_funcion = (int)$_GET['id_funcion'];
 $dni_cliente = $_SESSION['user_dni'];
-
-// --- 2. PROCESAMIENTO DE LA COMPRA ---
 $error_message = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['selected_seats'])) {
     $selected_seats = json_decode($_POST['selected_seats'], true);
-    // MEJORA: Obtener el método de pago del formulario
     $metodo_pago = $_POST['metodo_pago'];
 
     if (empty($selected_seats) || !is_array($selected_seats)) {
@@ -35,7 +31,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['selected_seats'])) {
             $precio_unitario = $stmt_precio->get_result()->fetch_assoc()['precio_base'];
             $total_compra = count($selected_seats) * $precio_unitario;
 
-            // MEJORA: Se incluye el método de pago en la inserción.
             $sql_compra = "INSERT INTO Compra (DNI_cliente, total, metodo_pago) VALUES (?, ?, ?)";
             $stmt_compra = $conn->prepare($sql_compra);
             $stmt_compra->bind_param("sds", $dni_cliente, $total_compra, $metodo_pago);
@@ -65,14 +60,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['selected_seats'])) {
     }
 }
 
-// --- 3. OBTENER DATOS PARA MOSTRAR LA PÁGINA (sin cambios) ---
-$sql_info = "SELECT p.titulo, f.fecha_hora, f.precio_base, s.nombre AS nombre_sede, sa.numero_sala, sa.capacidad FROM Funcion f JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula JOIN Sala sa ON f.ID_sala = sa.ID_sala JOIN Sede s ON sa.ID_sede = s.ID_sede WHERE f.ID_funcion = ?";
+$sql_info = "SELECT p.titulo, f.fecha_hora, f.precio_base, s.nombre AS nombre_sede, sa.numero_sala FROM Funcion f JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula JOIN Sala sa ON f.ID_sala = sa.ID_sala JOIN Sede s ON sa.ID_sede = s.ID_sede WHERE f.ID_funcion = ?";
 $stmt_info = $conn->prepare($sql_info);
 $stmt_info->bind_param("i", $id_funcion);
 $stmt_info->execute();
 $result_info = $stmt_info->get_result();
 $funcion_info = $result_info->fetch_assoc();
-$capacidad_sala = $funcion_info['capacidad'];
+
 $sql_ocupados = "SELECT fila, numero_asiento FROM Boleto WHERE ID_funcion = ?";
 $stmt_ocupados = $conn->prepare($sql_ocupados);
 $stmt_ocupados->bind_param("i", $id_funcion);
@@ -82,7 +76,6 @@ $asientos_ocupados = [];
 while ($row = $result_ocupados->fetch_assoc()) { $asientos_ocupados[] = $row['fila'] . '-' . $row['numero_asiento']; }
 ?>
 
-<!-- HTML y JavaScript (con la adición del select de método de pago) -->
 <div class="seat-selection-container">
     <div class="movie-summary">
         <h2><?php echo htmlspecialchars($funcion_info['titulo']); ?></h2>
@@ -90,15 +83,42 @@ while ($row = $result_ocupados->fetch_assoc()) { $asientos_ocupados[] = $row['fi
         <p><strong>Fecha y Hora:</strong> <?php echo date("d/m/Y h:i A", strtotime($funcion_info['fecha_hora'])); ?></p>
     </div>
     <?php if (!empty($error_message)): ?><div class="message error"><?php echo $error_message; ?></div><?php endif; ?>
+
     <div class="seat-map-container">
-        <!-- ... (código del mapa de asientos sin cambios) ... -->
+        <div class="screen">PANTALLA</div>
+        <div class="seat-map">
+            <?php
+            $filas = range('A', 'J');
+            $columnas = range(1, 15);
+
+            foreach ($filas as $fila) {
+                echo "<div class='seat-row'>";
+                echo "<div class='row-label'>$fila</div>";
+                foreach ($columnas as $columna) {
+                    $id_asiento = "$fila-$columna";
+                    $esta_ocupado = in_array($id_asiento, $asientos_ocupados);
+                    
+                    echo "<div class='seat-checkbox-wrapper'>";
+                    echo "<input type='checkbox' class='seat-checkbox' id='seat-$id_asiento' data-seat-id='$id_asiento' " . ($esta_ocupado ? 'disabled' : '') . ">";
+                    echo "<label for='seat-$id_asiento' class='seat-label'>$columna</label>";
+                    echo "</div>";
+                }
+                echo "</div>";
+            }
+            ?>
+        </div>
+        <div class="seat-legend">
+            <div class="legend-item"><div class="seat-label"></div> Disponible</div>
+            <div class="legend-item"><div class="seat-label selected"></div> Seleccionado</div>
+            <div class="legend-item"><div class="seat-label occupied"></div> Ocupado</div>
+        </div>
     </div>
+
     <div class="purchase-summary">
         <h3>Resumen de tu Compra</h3>
         <form action="comprar_boleto.php?id_funcion=<?php echo $id_funcion; ?>" method="POST" id="purchase-form">
             <p><strong>Asientos seleccionados:</strong> <span id="seats-list">Ninguno</span></p>
             
-            <!-- MEJORA: Selección de método de pago -->
             <div class="form-group">
                 <label for="metodo_pago">Método de Pago:</label>
                 <select name="metodo_pago" id="metodo_pago">
@@ -114,5 +134,51 @@ while ($row = $result_ocupados->fetch_assoc()) { $asientos_ocupados[] = $row['fi
         </form>
     </div>
 </div>
-<!-- ... (código JavaScript sin cambios) ... -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const seatMap = document.querySelector('.seat-map');
+    const seatsListSpan = document.getElementById('seats-list');
+    const totalPriceSpan = document.getElementById('total-price');
+    const selectedSeatsInput = document.getElementById('selected-seats-input');
+    const purchaseButton = document.getElementById('btn-comprar');
+    
+    const precioPorBoleto = <?php echo $funcion_info['precio_base'] ?? 0; ?>;
+    
+    seatMap.addEventListener('change', function(e) {
+        if (e.target.classList.contains('seat-checkbox')) {
+            actualizarResumen();
+        }
+    });
+
+    function actualizarResumen() {
+        const asientosSeleccionados = [];
+        const checkedSeats = seatMap.querySelectorAll('.seat-checkbox:checked');
+        
+        checkedSeats.forEach(checkbox => {
+            asientosSeleccionados.push(checkbox.dataset.seatId);
+        });
+        asientosSeleccionados.sort((a, b) => {
+            const [filaA, numA] = a.split('-');
+            const [filaB, numB] = b.split('-');
+            if (filaA < filaB) return -1;
+            if (filaA > filaB) return 1;
+            return parseInt(numA) - parseInt(numB);
+        });
+
+        if (asientosSeleccionados.length === 0) {
+            seatsListSpan.textContent = 'Ninguno';
+            purchaseButton.disabled = true;
+        } else {
+            seatsListSpan.textContent = asientosSeleccionados.join(', ');
+            purchaseButton.disabled = false;
+        }
+        
+        const total = asientosSeleccionados.length * precioPorBoleto;
+        totalPriceSpan.textContent = total.toFixed(2);
+        selectedSeatsInput.value = JSON.stringify(asientosSeleccionados);
+    }
+});
+</script>
+
 <?php require_once 'includes/footer.php'; ?>

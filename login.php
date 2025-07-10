@@ -1,52 +1,34 @@
 <?php
-// Archivo: login.php (ubicado en la carpeta raíz del proyecto)
 // Página para que los usuarios (clientes y admin) inicien sesión.
-
-// Incluimos la configuración de la base de datos para tener acceso a $conn y session_start().
 require_once 'config/database.php';
 
-$error_message = ''; // Variable para almacenar mensajes de error.
+$error_message = '';
 
-// Verificamos si el formulario ha sido enviado.
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Obtenemos el email y la contraseña del formulario.
     $email = $conn->real_escape_string($_POST['email']);
-    $password = $_POST['password']; // No escapamos la contraseña aún.
-
-    // Buscamos un cliente con el email proporcionado.
+    $password = $_POST['password'];
     $sql = "SELECT DNI, nombre, password, es_admin FROM Cliente WHERE email = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
-
-    // Verificamos si se encontró un usuario.
     if ($result->num_rows == 1) {
         $user = $result->fetch_assoc();
-
-        // Verificamos la contraseña.
-        // NOTA: En un proyecto real, aquí usarías password_verify($password, $user['password']).
-        // Para este proyecto, usamos una comparación simple como se estableció en la BD.
         if ($password === $user['password']) {
-            // La contraseña es correcta. Creamos las variables de sesión.
             $_SESSION['user_dni'] = $user['DNI'];
             $_SESSION['user_nombre'] = $user['nombre'];
             $_SESSION['es_admin'] = (bool)$user['es_admin'];
-
-            // Redirigimos al usuario según su rol.
             if ($_SESSION['es_admin']) {
                 header("Location: admin/index.php");
             } else {
                 header("Location: index.php");
             }
-            exit(); // Detenemos el script después de redirigir.
+            exit();
 
         } else {
-            // La contraseña es incorrecta.
             $error_message = "La contraseña es incorrecta. Por favor, inténtalo de nuevo.";
         }
     } else {
-        // No se encontró ningún usuario con ese email.
         $error_message = "No se encontró ningún usuario con ese correo electrónico.";
     }
     $stmt->close();
@@ -60,7 +42,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>Iniciar Sesión - Cineplanet</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* Estilos específicos para la página de login */
         body {
             background-color: #e9ebee;
             display: flex;

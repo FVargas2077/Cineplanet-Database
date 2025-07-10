@@ -1,5 +1,4 @@
 <?php
-// Archivo: includes/public_header.php
 require_once __DIR__ . '/../config/database.php';
 ?>
 <!DOCTYPE html>
@@ -18,7 +17,6 @@ require_once __DIR__ . '/../config/database.php';
         <nav>
             <ul>
                 <li><a href="index.php">Cartelera</a></li>
-                <!-- CORRECCIÓN: Enlaces ahora funcionales -->
                 <li><a href="sedes.php">Sedes</a></li>
                 <li><a href="dulceria_public.php">Dulcería</a></li>
                 <?php if (isset($_SESSION['user_dni'])): ?>

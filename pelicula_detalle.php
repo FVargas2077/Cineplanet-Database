@@ -1,10 +1,7 @@
 <?php
-// Archivo: pelicula_detalle.php (en la raíz del proyecto)
 // Muestra los detalles de una película y sus funciones disponibles.
 
 require_once 'includes/public_header.php';
-
-// Verificamos si se ha proporcionado un ID de película en la URL.
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     echo "<p>Película no encontrada.</p>";
     require_once 'includes/footer.php';
@@ -12,8 +9,6 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 }
 
 $id_pelicula = (int)$_GET['id'];
-
-// --- Consultar la información de la película ---
 $sql_pelicula = "SELECT titulo, genero, duracion_minutos, clasificacion, sinopsis FROM Pelicula WHERE ID_pelicula = ?";
 $stmt_pelicula = $conn->prepare($sql_pelicula);
 $stmt_pelicula->bind_param("i", $id_pelicula);
@@ -47,7 +42,6 @@ $stmt_pelicula->close();
     <div class="funciones-container">
         <h2>Horarios Disponibles</h2>
         <?php
-        // --- Consultar las funciones para esta película ---
         $sql_funciones = "SELECT f.ID_funcion, f.fecha_hora, f.precio_base,
                                  s.nombre AS nombre_sede, sa.numero_sala, sa.tipo_sala
                           FROM Funcion f
@@ -64,9 +58,8 @@ $stmt_pelicula->close();
         if ($result_funciones->num_rows > 0) {
             $current_sede = '';
             while ($funcion = $result_funciones->fetch_assoc()) {
-                // Agrupamos las funciones por sede
                 if ($funcion['nombre_sede'] !== $current_sede) {
-                    if ($current_sede !== '') echo "</div>"; // Cierra el div de la sede anterior
+                    if ($current_sede !== '') echo "</div>";
                     $current_sede = $funcion['nombre_sede'];
                     echo "<div class='sede-group'>";
                     echo "<h3>" . htmlspecialchars($current_sede) . "</h3>";
@@ -79,7 +72,7 @@ $stmt_pelicula->close();
                 </a>
         <?php
             }
-            echo "</div>"; // Cierra el último div de sede
+            echo "</div>";
         } else {
             echo "<p>No hay funciones programadas para esta película en el futuro.</p>";
         }
