@@ -1,4 +1,5 @@
 <?php
+// Archivo: includes/header.php
 require_once __DIR__ . '/../config/database.php';
 ?>
 <!DOCTYPE html>
@@ -17,6 +18,7 @@ require_once __DIR__ . '/../config/database.php';
         <nav>
             <ul>
                 <li><a href="index.php">Inicio Admin</a></li>
+                <li><a href="funciones.php">Gestionar Funciones</a></li>
                 <li><a href="peliculas.php">Gestionar Películas</a></li>
                 <li><a href="dulceria.php">Gestionar Dulcería</a></li>
                 <li><a href="../logout.php" class="logout-btn">Cerrar Sesión</a></li>
