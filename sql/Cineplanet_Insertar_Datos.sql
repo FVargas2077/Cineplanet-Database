@@ -47,13 +47,13 @@ INSERT INTO Sala (ID_sala, ID_sede, numero_sala, tipo_sala, capacidad) VALUES
 
 
 INSERT INTO Funcion (ID_funcion, ID_pelicula, ID_sala, fecha_hora, precio_base) VALUES
-(1, 1, 1, '2025-07-15 18:00:00', 15.00), -- Intensamente 2 en Tacna Sala 1
-(2, 1, 2, '2025-07-15 20:30:00', 20.00), -- Intensamente 2 en Tacna Sala 2 (3D)
-(3, 2, 3, '2025-07-15 19:15:00', 18.00), -- Bad Boys en Arequipa Sala 1
-(4, 3, 4, '2025-07-15 21:00:00', 35.00), -- Planeta Simios en Arequipa Sala 2 (VIP)
-(5, 4, 5, '2025-07-15 16:00:00', 22.00), -- Garfield en Lima Sala 5 (3D)
+(1, 1, 1, '2025-07-20 18:00:00', 15.00), -- Intensamente 2 en Tacna Sala 1
+(2, 1, 2, '2025-07-20 20:30:00', 20.00), -- Intensamente 2 en Tacna Sala 2 (3D)
+(3, 2, 3, '2025-07-20 19:15:00', 18.00), -- Bad Boys en Arequipa Sala 1
+(4, 3, 4, '2025-07-20 21:00:00', 35.00), -- Planeta Simios en Arequipa Sala 2 (VIP)
+(5, 4, 5, '2025-07-20 16:00:00', 22.00), -- Garfield en Lima Sala 5 (3D)
 -- Función para el caso de uso:
-(101, 10, 6, '2025-07-15 20:40:00', 25.00); -- Cómo entrenar tu dragón en Tacna (Sala 3D) a las 8:40 PM
+(101, 10, 6, '2025-07-20 20:40:00', 25.00); -- Cómo entrenar tu dragón en Tacna (Sala 3D) a las 8:40 PM
 
 -- 7. Insertar Productos de Dulcería (5 registros)
 INSERT INTO Dulceria (nombre, categoria, precio_unitario, stock) VALUES

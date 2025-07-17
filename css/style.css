@@ -702,3 +702,102 @@ footer {
   background-color: #6c757d;
   border-top-color: #8d959c;
 }
+
+.btn-secondary {
+    display: inline-block;
+    background-color: #6c757d; /* Gris */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    text-align: center;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.profile-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.styled-form input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+/* Botón secundario para "Volver" */
+.btn-secondary {
+    display: inline-block;
+    background-color: #6c757d; /* Gris */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    text-align: center;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+/* Contenedor de acciones en la tarjeta de perfil */
+.profile-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* Hacer que el input de DNI se vea deshabilitado */
+.styled-form input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+/* === NUEVOS ESTILOS PARA RESUMEN DE COMPRA === */
+.purchase-summary .discount-info {
+    color: #28a745; /* Verde para el descuento */
+    font-weight: bold;
+}
+
+.purchase-summary hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 15px 0;
+}
+
+.purchase-summary .final-total {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #00529b; /* Azul para el total final */
+}
+
+/* === ESTILOS PARA RESUMEN DE COMPRA CON DESCUENTO === */
+
+.purchase-summary .discount-info {
+    color: #28a745; /* Verde para el descuento */
+    font-weight: bold;
+}
+
+.purchase-summary hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 15px 0;
+}
+
+.purchase-summary .final-total {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #00529b; /* Azul para el total final */
+}
