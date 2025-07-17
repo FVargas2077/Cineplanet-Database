@@ -66,6 +66,7 @@ $stmt_pelicula->close();
                 }
         ?>
                 <a href="comprar_boleto.php?id_funcion=<?php echo $funcion['ID_funcion']; ?>" class="funcion-item">
+                    <div class="hora"><?php echo date("d/m/Y", strtotime($funcion['fecha_hora'])); ?></div>
                     <div class="hora"><?php echo date("g:i A", strtotime($funcion['fecha_hora'])); ?></div>
                     <div class="sala-tipo"><?php echo htmlspecialchars($funcion['tipo_sala']); ?></div>
                     <div class="precio">S/ <?php echo number_format($funcion['precio_base'], 2); ?></div>

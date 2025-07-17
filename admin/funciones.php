@@ -1,27 +1,39 @@
 <?php
 // Archivo: admin/funciones.php
-// Página para gestionar (Añadir/Eliminar) Funciones.
-
 require_once '../includes/header.php';
-// check_admin(); // Asegúrate de que el admin haya iniciado sesión
+// check_admin(); // Descomenta si ya usas control de sesión para admin
 
-// --- LÓGICA PARA PROCESAR EL FORMULARIO DE AÑADIR FUNCIÓN ---
+// --- LÓGICA PARA AÑADIR NUEVA FUNCIÓN ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_funcion'])) {
-    // Recogemos los datos del formulario
     $id_pelicula = (int)$_POST['id_pelicula'];
     $id_sala = (int)$_POST['id_sala'];
     $fecha_hora = $_POST['fecha_hora'];
     $precio = (float)$_POST['precio'];
 
-    // Preparamos la consulta SQL para insertar la nueva función
     $sql = "INSERT INTO Funcion (ID_pelicula, ID_sala, fecha_hora, precio_base) VALUES (?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iisd", $id_pelicula, $id_sala, $fecha_hora, $precio);
-
     if ($stmt->execute()) {
         echo "<p class='message success'>Función añadida correctamente.</p>";
     } else {
         echo "<p class='message error'>Error al añadir la función: " . $stmt->error . "</p>";
+    }
+    $stmt->close();
+}
+
+// --- LÓGICA PARA ACTUALIZAR UNA FUNCIÓN ---
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_funcion'])) {
+    $id_funcion = (int)$_POST['id_funcion'];
+    $fecha_hora = $_POST['fecha_hora'];
+    $precio = (float)$_POST['precio'];
+
+    $sql = "UPDATE Funcion SET fecha_hora = ?, precio_base = ? WHERE ID_funcion = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sdi", $fecha_hora, $precio, $id_funcion);
+    if ($stmt->execute()) {
+        echo "<p class='message success'>Función actualizada correctamente.</p>";
+    } else {
+        echo "<p class='message error'>Error al actualizar la función: " . $stmt->error . "</p>";
     }
     $stmt->close();
 }
@@ -40,7 +52,7 @@ if (isset($_GET['delete_id'])) {
     $stmt->close();
 }
 
-// --- Consultas para llenar los dropdowns del formulario ---
+// --- Cargar películas y sedes para el formulario ---
 $peliculas = $conn->query("SELECT ID_pelicula, titulo FROM Pelicula ORDER BY titulo");
 $sedes = $conn->query("SELECT ID_sede, nombre FROM Sede ORDER BY nombre");
 ?>
@@ -54,7 +66,7 @@ $sedes = $conn->query("SELECT ID_sede, nombre FROM Sede ORDER BY nombre");
             <select id="id_pelicula" name="id_pelicula" required>
                 <option value="">Seleccione una película</option>
                 <?php while ($p = $peliculas->fetch_assoc()): ?>
-                    <option value="<?php echo $p['ID_pelicula']; ?>"><?php echo htmlspecialchars($p['titulo']); ?></option>
+                    <option value="<?= $p['ID_pelicula'] ?>"><?= htmlspecialchars($p['titulo']) ?></option>
                 <?php endwhile; ?>
             </select>
         </div>
@@ -64,7 +76,7 @@ $sedes = $conn->query("SELECT ID_sede, nombre FROM Sede ORDER BY nombre");
             <select id="id_sede" name="id_sede" required>
                 <option value="">Seleccione una sede</option>
                 <?php while ($s = $sedes->fetch_assoc()): ?>
-                    <option value="<?php echo $s['ID_sede']; ?>"><?php echo htmlspecialchars($s['nombre']); ?></option>
+                    <option value="<?= $s['ID_sede'] ?>"><?= htmlspecialchars($s['nombre']) ?></option>
                 <?php endwhile; ?>
             </select>
         </div>
@@ -106,29 +118,80 @@ $sedes = $conn->query("SELECT ID_sede, nombre FROM Sede ORDER BY nombre");
         </thead>
         <tbody>
             <?php
-            $sql = "SELECT f.ID_funcion, p.titulo, s.nombre AS sede, sa.numero_sala, f.fecha_hora, f.precio_base
+            $sql = "SELECT f.ID_funcion, f.ID_pelicula, f.ID_sala, f.fecha_hora, f.precio_base,
+                        p.titulo, sa.numero_sala, sa.ID_sede, s.nombre AS sede
                     FROM Funcion f
                     JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula
                     JOIN Sala sa ON f.ID_sala = sa.ID_sala
                     JOIN Sede s ON sa.ID_sede = s.ID_sede
                     ORDER BY f.fecha_hora DESC";
             $result = $conn->query($sql);
-            if ($result->num_rows > 0) {
-                while($row = $result->fetch_assoc()) {
-                    echo "<tr>";
-                    echo "<td>" . htmlspecialchars($row["titulo"]) . "</td>";
-                    echo "<td>" . htmlspecialchars($row["sede"]) . "</td>";
-                    echo "<td>Sala " . $row["numero_sala"] . "</td>";
-                    echo "<td>" . date("d/m/Y h:i A", strtotime($row["fecha_hora"])) . "</td>";
-                    echo "<td>S/ " . number_format($row["precio_base"], 2) . "</td>";
-                    echo "<td><a href='funciones.php?delete_id=" . $row["ID_funcion"] . "' class='delete-btn' onclick='return confirm(\"¿Estás seguro?\");'>Eliminar</a></td>";
-                    echo "</tr>";
-                }
-            } else {
-                echo "<tr><td colspan='6'>No hay funciones programadas.</td></tr>";
+
+            // Obtener todas las sedes y salas
+            $all_sedes = $conn->query("SELECT ID_sede, nombre FROM Sede");
+            $sedes_arr = [];
+            while ($row = $all_sedes->fetch_assoc()) {
+                $sedes_arr[$row['ID_sede']] = $row['nombre'];
             }
+
+            $all_salas = $conn->query("SELECT ID_sala, numero_sala, tipo_sala, ID_sede FROM Sala");
+            $salas_arr = [];
+            while ($row = $all_salas->fetch_assoc()) {
+                $salas_arr[$row['ID_sede']][] = $row;
+            }
+
+            if ($result->num_rows > 0):
+                while ($row = $result->fetch_assoc()):
             ?>
+                <tr>
+                    <form method="POST">
+                        <td><?= htmlspecialchars($row['titulo']) ?></td>
+                        <td>
+                            <select name="id_sede" class="sede-select" required onchange="actualizarSalas(this)">
+                                <?php foreach ($sedes_arr as $id => $nombre): ?>
+                                    <option value="<?= $id ?>" <?= $id == $row['ID_sede'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($nombre) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="id_sala" class="sala-select" required data-sede="<?= $row['ID_sede'] ?>">
+                                <?php
+                                foreach ($salas_arr[$row['ID_sede']] as $sala):
+                                    $selected = $sala['ID_sala'] == $row['ID_sala'] ? 'selected' : '';
+                                    echo "<option value='{$sala['ID_sala']}' $selected>Sala {$sala['numero_sala']} ({$sala['tipo_sala']})</option>";
+                                endforeach;
+                                ?>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="datetime-local" name="fecha_hora" value="<?= date("Y-m-d\TH:i", strtotime($row["fecha_hora"])) ?>" required>
+                        </td>
+                        <td>
+                            <input type="number" name="precio" step="0.10" value="<?= $row["precio_base"] ?>" required style="width:80px;">
+                        </td>
+                        <td>
+                            <input type="hidden" name="id_funcion" value="<?= $row["ID_funcion"] ?>">
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                <button type="submit" name="update_funcion" 
+                                        style="flex: 1; background-color: #3498db; color: white; border: none; padding: 6px 0; border-radius: 4px; cursor: pointer;font-size: 12px;">
+                                    Actualizar
+                                </button>
+                                <a href="funciones.php?delete_id=<?= $row["ID_funcion"] ?>" 
+                                    onclick="return confirm('¿Estás seguro de eliminar esta función?');"
+                                    style="flex: 1; background-color: #e74c3c; color: white; text-align: center; padding: 6px 0; text-decoration: none; border-radius: 4px;font-size: 12px;">
+                                    Eliminar
+                                </a>
+                            </div>
+                        </td>
+                    </form>
+                </tr>
+            <?php endwhile; else: ?>
+                <tr><td colspan="6">No hay funciones programadas.</td></tr>
+            <?php endif; ?>
         </tbody>
+
     </table>
 </div>
 
@@ -158,6 +221,31 @@ document.getElementById('id_sede').addEventListener('change', function() {
         });
 });
 </script>
+
+<script>
+const salasPorSede = <?= json_encode($salas_arr) ?>;
+
+function actualizarSalas(selectSede) {
+    const sedeId = selectSede.value;
+    const row = selectSede.closest("tr");
+    const salaSelect = row.querySelector(".sala-select");
+
+    salaSelect.innerHTML = "";
+
+    if (!salasPorSede[sedeId]) {
+        salaSelect.innerHTML = "<option value=''>No hay salas</option>";
+        return;
+    }
+
+    salasPorSede[sedeId].forEach(sala => {
+        const option = document.createElement("option");
+        option.value = sala.ID_sala;
+        option.text = `Sala ${sala.numero_sala} (${sala.tipo_sala})`;
+        salaSelect.appendChild(option);
+    });
+}
+</script>
+
 
 <?php
 require_once '../includes/footer.php';

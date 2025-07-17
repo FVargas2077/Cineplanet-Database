@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS CineDB;
+-- DROP DATABASE IF EXISTS CineDB;
 CREATE DATABASE CineDB;
 USE CineDB;
 
@@ -19,6 +19,7 @@ CREATE TABLE Cliente (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL, -- Campo para la contraseña
     es_admin BOOLEAN DEFAULT FALSE, -- Flag para identificar administradores
+    es_socio BOOLEAN DEFAULT FALSE,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -73,7 +74,6 @@ CREATE TABLE Compra (
     fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total DECIMAL(8,2) NOT NULL,
     metodo_pago ENUM('Tarjeta', 'Efectivo', 'Yape') DEFAULT 'Tarjeta',
-    descuento_aplicado DECIMAL(8,2) DEFAULT 0.00,
     FOREIGN KEY (DNI_cliente) REFERENCES Cliente(DNI) ON DELETE RESTRICT
 );
 

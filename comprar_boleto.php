@@ -1,10 +1,5 @@
 <?php
-// Archivo: comprar_boleto.php
-// Versión mejorada con descuento automático del 15% para socios.
-
 require_once 'includes/public_header.php';
-
-// --- 1. SEGURIDAD Y VALIDACIÓN INICIAL ---
 if (!isset($_SESSION['user_dni'])) {
     $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
     header("Location: login.php");
@@ -17,21 +12,8 @@ if (!isset($_GET['id_funcion']) || !is_numeric($_GET['id_funcion'])) {
 }
 $id_funcion = (int)$_GET['id_funcion'];
 $dni_cliente = $_SESSION['user_dni'];
-
-// --- MEJORA: VERIFICAR SI EL USUARIO ES SOCIO ---
-$es_socio = false;
-$sql_check_socio = "SELECT DNI FROM Socio WHERE DNI = ?";
-$stmt_check_socio = $conn->prepare($sql_check_socio);
-$stmt_check_socio->bind_param("s", $dni_cliente);
-$stmt_check_socio->execute();
-if ($stmt_check_socio->get_result()->num_rows > 0) {
-    $es_socio = true;
-}
-$stmt_check_socio->close();
-
-
-// --- 2. PROCESAMIENTO DE LA COMPRA (ACTUALIZADO) ---
 $error_message = '';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['selected_seats'])) {
     $selected_seats = json_decode($_POST['selected_seats'], true);
     $metodo_pago = $_POST['metodo_pago'];
@@ -41,39 +23,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['selected_seats'])) {
     } else {
         $conn->begin_transaction();
         try {
+            // Precio base
             $sql_precio = "SELECT precio_base FROM Funcion WHERE ID_funcion = ?";
             $stmt_precio = $conn->prepare($sql_precio);
             $stmt_precio->bind_param("i", $id_funcion);
             $stmt_precio->execute();
             $precio_unitario = $stmt_precio->get_result()->fetch_assoc()['precio_base'];
-            
-            // MEJORA: Calcular subtotal, descuento y total
-            $subtotal = count($selected_seats) * $precio_unitario;
-            $descuento_aplicado = 0;
-            if ($es_socio) {
-                $descuento_aplicado = $subtotal * 0.15;
-            }
-            $total_compra = $subtotal - $descuento_aplicado;
 
-            // MEJORA: Se inserta el descuento y el total final en la compra
-            $sql_compra = "INSERT INTO Compra (DNI_cliente, total, metodo_pago, descuento_aplicado) VALUES (?, ?, ?, ?)";
+            // Verificar si es socio (15% descuento)
+            $sql_socio = "SELECT es_socio FROM Cliente WHERE DNI = ?";
+            $stmt_socio = $conn->prepare($sql_socio);
+            $stmt_socio->bind_param("s", $dni_cliente);
+            $stmt_socio->execute();
+            $es_socio = $stmt_socio->get_result()->fetch_assoc()['es_socio'];
+
+            $cantidad = count($selected_seats);
+            $monto_original = $cantidad * $precio_unitario; // total sin descuento
+            $subtotal = $monto_original;
+
+            if ($es_socio) {
+                $subtotal = $subtotal * 0.85;
+            }
+
+            $subtotal = round($subtotal, 2);
+            $total_compra = round($subtotal * 10) / 10;
+
+            // Insertar compra
+            $sql_compra = "INSERT INTO Compra (DNI_cliente, total, metodo_pago) VALUES (?, ?, ?)";
             $stmt_compra = $conn->prepare($sql_compra);
-            $stmt_compra->bind_param("sdsd", $dni_cliente, $total_compra, $metodo_pago, $descuento_aplicado);
+            $stmt_compra->bind_param("sds", $dni_cliente, $total_compra, $metodo_pago);
             $stmt_compra->execute();
             $id_compra_nueva = $conn->insert_id;
 
-            // La inserción de boletos no cambia
+            // Insertar boletos
             $sql_boleto = "INSERT INTO Boleto (ID_compra, ID_funcion, fila, numero_asiento, precio_pagado) VALUES (?, ?, ?, ?, ?)";
             $stmt_boleto = $conn->prepare($sql_boleto);
             foreach ($selected_seats as $seat) {
                 list($fila, $numero) = explode('-', $seat);
-                $stmt_boleto->bind_param("iisid", $id_compra_nueva, $id_funcion, $fila, $numero, $precio_unitario);
+                $precio_final = $precio_unitario;
+                if ($es_socio) {
+                    $precio_final *= 0.85;
+                }
+                $precio_final = round($precio_final * 10) / 10;
+
+                $stmt_boleto->bind_param("iisid", $id_compra_nueva, $id_funcion, $fila, $numero, $precio_final);
                 $stmt_boleto->execute();
             }
+
+            // Guardar monto original en sesión para mostrar en la siguiente página
+            $_SESSION['monto_original'] = $monto_original;
 
             $conn->commit();
             header("Location: compra_exitosa.php?id_compra=" . $id_compra_nueva);
             exit();
+
 
         } catch (mysqli_sql_exception $exception) {
             $conn->rollback();
@@ -86,7 +89,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['selected_seats'])) {
     }
 }
 
-// --- 3. OBTENER DATOS PARA MOSTRAR LA PÁGINA (sin cambios) ---
 $sql_info = "SELECT p.titulo, f.fecha_hora, f.precio_base, s.nombre AS nombre_sede, sa.numero_sala FROM Funcion f JOIN Pelicula p ON f.ID_pelicula = p.ID_pelicula JOIN Sala sa ON f.ID_sala = sa.ID_sala JOIN Sede s ON sa.ID_sede = s.ID_sede WHERE f.ID_funcion = ?";
 $stmt_info = $conn->prepare($sql_info);
 $stmt_info->bind_param("i", $id_funcion);
@@ -146,13 +148,6 @@ while ($row = $result_ocupados->fetch_assoc()) { $asientos_ocupados[] = $row['fi
         <form action="comprar_boleto.php?id_funcion=<?php echo $id_funcion; ?>" method="POST" id="purchase-form">
             <p><strong>Asientos seleccionados:</strong> <span id="seats-list">Ninguno</span></p>
             
-            <!-- MEJORA: Mostrar subtotal y descuento -->
-            <p><strong>Subtotal:</strong> S/ <span id="subtotal-price">0.00</span></p>
-            <?php if ($es_socio): ?>
-                <p class="discount-info"><strong>Descuento de Socio (15%):</strong> - S/ <span id="discount-amount">0.00</span></p>
-            <?php endif; ?>
-            <hr>
-            
             <div class="form-group">
                 <label for="metodo_pago">Método de Pago:</label>
                 <select name="metodo_pago" id="metodo_pago">
@@ -162,7 +157,7 @@ while ($row = $result_ocupados->fetch_assoc()) { $asientos_ocupados[] = $row['fi
                 </select>
             </div>
 
-            <p class="final-total"><strong>TOTAL A PAGAR:</strong> S/ <span id="total-price">0.00</span></p>
+            <p><strong>Total a pagar:</strong> S/ <span id="total-price">0.00</span></p>
             <input type="hidden" name="selected_seats" id="selected-seats-input">
             <button type="submit" class="btn" id="btn-comprar" disabled>Completar Compra</button>
         </form>
@@ -173,14 +168,10 @@ while ($row = $result_ocupados->fetch_assoc()) { $asientos_ocupados[] = $row['fi
 document.addEventListener('DOMContentLoaded', function() {
     const seatMap = document.querySelector('.seat-map');
     const seatsListSpan = document.getElementById('seats-list');
-    const subtotalPriceSpan = document.getElementById('subtotal-price');
-    const discountAmountSpan = document.getElementById('discount-amount');
     const totalPriceSpan = document.getElementById('total-price');
     const selectedSeatsInput = document.getElementById('selected-seats-input');
     const purchaseButton = document.getElementById('btn-comprar');
     
-    // MEJORA: Pasamos el estado de socio y el precio a JavaScript
-    const esSocio = <?php echo json_encode($es_socio); ?>;
     const precioPorBoleto = <?php echo $funcion_info['precio_base'] ?? 0; ?>;
     
     seatMap.addEventListener('change', function(e) {
@@ -196,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
         checkedSeats.forEach(checkbox => {
             asientosSeleccionados.push(checkbox.dataset.seatId);
         });
-
         asientosSeleccionados.sort((a, b) => {
             const [filaA, numA] = a.split('-');
             const [filaB, numB] = b.split('-');
@@ -213,20 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
             purchaseButton.disabled = false;
         }
         
-        // MEJORA: Lógica de cálculo de precios en JavaScript
-        const subtotal = asientosSeleccionados.length * precioPorBoleto;
-        let descuento = 0;
-        if (esSocio) {
-            descuento = subtotal * 0.15;
-        }
-        const total = subtotal - descuento;
-
-        subtotalPriceSpan.textContent = subtotal.toFixed(2);
-        if (esSocio && discountAmountSpan) {
-            discountAmountSpan.textContent = descuento.toFixed(2);
-        }
+        const total = asientosSeleccionados.length * precioPorBoleto;
         totalPriceSpan.textContent = total.toFixed(2);
-        
         selectedSeatsInput.value = JSON.stringify(asientosSeleccionados);
     }
 });

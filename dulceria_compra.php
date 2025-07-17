@@ -19,10 +19,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['cart_data'])) {
     } else {
         $conn->begin_transaction();
         try {
-            $total_compra = 0;
+            // Calcular monto original (sin descuento)
+            $monto_original = 0;
             foreach ($cart_data as $item) {
-                $total_compra += $item['price'] * $item['quantity'];
+                $monto_original += $item['price'] * $item['quantity'];
             }
+
+            // Verificar si es socio
+            $sql_socio = "SELECT es_socio FROM Cliente WHERE DNI = ?";
+            $stmt_socio = $conn->prepare($sql_socio);
+            $stmt_socio->bind_param("s", $dni_cliente);
+            $stmt_socio->execute();
+            $es_socio = $stmt_socio->get_result()->fetch_assoc()['es_socio'];
+
+            // Aplicar descuento si es socio
+            $total_compra = $monto_original;
+            if ($es_socio) {
+                $total_compra *= 0.85;
+            }
+
+            // Redondeo
+            $total_compra = round($total_compra * 10) / 10;
+
+            // Guardar monto original para mostrar luego
+            if ($es_socio) {
+                $_SESSION['monto_original'] = $monto_original;
+           }
 
             // 1. Insertar en la tabla Compra
             $sql_compra = "INSERT INTO Compra (DNI_cliente, total, metodo_pago) VALUES (?, ?, ?)";
@@ -36,9 +58,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['cart_data'])) {
             $stmt_detalle = $conn->prepare($sql_detalle);
 
             foreach ($cart_data as $item) {
-                $stmt_detalle->bind_param("iiid", $id_compra_nueva, $item['id'], $item['quantity'], $item['price']);
+                $precio_unitario = $item['price'];
+                if ($es_socio) {
+                    $precio_unitario *= 0.85;
+                }
+                $precio_unitario = round($precio_unitario * 10) / 10;
+
+                $stmt_detalle->bind_param("iiid", $id_compra_nueva, $item['id'], $item['quantity'], $precio_unitario);
                 $stmt_detalle->execute();
             }
+
 
             $conn->commit();
             header("Location: compra_exitosa.php?id_compra=" . $id_compra_nueva);

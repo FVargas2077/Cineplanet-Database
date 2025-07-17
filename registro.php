@@ -52,33 +52,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (!empty($success_message)): ?>
         <div class="message success"><?php echo $success_message; ?></div>
     <?php else: ?>
-    <form class="styled-form" action="registro.php" method="POST">
-        <div class="form-group">
-            <label for="dni">DNI:</label>
-            <input type="text" id="dni" name="dni" required maxlength="8">
-        </div>
-        <div class="form-group">
-            <label for="nombre">Nombres:</label>
-            <input type="text" id="nombre" name="nombre" required>
-        </div>
-        <div class="form-group">
-            <label for="apellidos">Apellidos:</label>
-            <input type="text" id="apellidos" name="apellidos" required>
-        </div>
-        <div class="form-group">
-            <label for="email">Correo Electrónico:</label>
-            <input type="email" id="email" name="email" required>
-        </div>
-        <div class="form-group">
-            <label for="password">Contraseña:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <div class="form-group">
-            <label for="password_confirm">Confirmar Contraseña:</label>
-            <input type="password" id="password_confirm" name="password_confirm" required>
-        </div>
-        <button type="submit" class="btn">Registrarme</button>
-    </form>
+        <form class="styled-form" action="registro.php" method="POST">
+            <div class="form-group">
+                <label for="dni">DNI:</label>
+                <input type="text" id="dni" name="dni" required maxlength="8">
+            </div>
+            <div class="form-group">
+                <label for="nombre">Nombres:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="apellidos">Apellidos:</label>
+                <input type="text" id="apellidos" name="apellidos" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Correo Electrónico:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="password_confirm">Confirmar Contraseña:</label>
+                <input type="password" id="password_confirm" name="password_confirm" required>
+            </div>
+            <button type="submit" class="btn">Registrarme</button>
+        </form>
     <?php endif; ?>
 </div>
 
